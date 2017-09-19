@@ -8,7 +8,8 @@ MaximizeLongStep <- function(long.thetas, y, y.lagged,
                              sigma.min, 
                              z.dependent.lagged = NULL,
                              z.independent.lagged = NULL,
-                             is.MSM = FALSE)
+                             is.MSM = FALSE,
+                             qu.zhuo.constraint = FALSE)
 {
   long.results <- MaximizeShortStep(short.thetas = long.thetas,
                                     y = y, y.lagged = y.lagged,
@@ -22,7 +23,7 @@ MaximizeLongStep <- function(long.thetas, y, y.lagged,
                                     sigma.min = sigma.min,
                                     z.dependent.lagged = z.dependent.lagged,
                                     z.independent.lagged = z.independent.lagged,
-                                    is.MSM = is.MSM)
+                                    is.MSM = is.MSM, qu.zhuo.constraint = qu.zhuo.constraint)
   
   long.likelihoods <- sapply(long.results, "[[", "likelihood")
   long.likelihoods[!is.finite(long.likelihoods)] <- -Inf # abnormal values

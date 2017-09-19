@@ -15,7 +15,7 @@ const double LOG2PI_OVERTWO = 0.91893853320467274178; // (log(2*pi) / 2)
 // repeated column of the original beta will give you the likelihood for
 // MS-AR model with non-switching beta.
 // [[Rcpp::export]]
-SEXP LikelihoodMSIAR (Rcpp::NumericVector y_rcpp,
+SEXP LikelihoodMSIAROld (Rcpp::NumericVector y_rcpp,
 					Rcpp::NumericMatrix y_lagged_rcpp,
 					Rcpp::NumericMatrix z_dependent_rcpp,
 					Rcpp::NumericMatrix z_independent_rcpp,
@@ -72,7 +72,7 @@ SEXP LikelihoodMSIAR (Rcpp::NumericVector y_rcpp,
 
 		arma::colvec xi_past;
 		if (k > 0)
-			xi_past = transition_probs_t * arma::exp(xi_k_t.col(k-1));
+			xi_past = transition_probs_t * xi_k_t.col(k-1);
 		else
 			xi_past = initial_dist;
     xi_past /= arma::sum(xi_past);
@@ -98,13 +98,14 @@ SEXP LikelihoodMSIAR (Rcpp::NumericVector y_rcpp,
 		for (int j = 0; j < M; j++)
 		{
 			if (j == min_index)
-				row_sum += 1.0;
+				xi_k_t(j,k) = 1.0;
 			else
-				row_sum += (ratios[j] / ratios[min_index]) *
+				xi_k_t(j,k) = (ratios[j] / ratios[min_index]) *
 											exp(min_value - xi_k_t(j,k));
-			xi_k_t(j,k) = -xi_k_t(j,k);
-			xi_k_t(j,k) += log(ratios[j]);
+			row_sum += xi_k_t(j,k);
 		}
+
+		xi_k_t.col(k) /= row_sum;
 
 		likelihood += log(row_sum) - min_value + log(ratios[min_index]);
 

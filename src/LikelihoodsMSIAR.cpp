@@ -55,7 +55,7 @@ SEXP LikelihoodsMSIAR (Rcpp::NumericVector y_rcpp,
 								gamma_independent_rcpp.size(), false);
 
 	arma::mat transition_probs_t = transition_probs.t();
-	arma::colvec likelihoods(n);
+	arma::colvec likelihoods(n, arma::fill::zeros);
 
 	for (int k = 0; k < n; k++)
 	{
@@ -73,7 +73,7 @@ SEXP LikelihoodsMSIAR (Rcpp::NumericVector y_rcpp,
 		else
 			xi_past = initial_dist;
 		xi_past /= arma::sum(xi_past);
-		
+
 		for (int j = 0; j < M; j++)
 		{
 			arma::colvec xi_k_t_jk = y.row(k) - y_lagged.row(k) * beta.col(j) -

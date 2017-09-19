@@ -128,6 +128,10 @@ TestMSARSequence <- function(y, z.dependent = NULL, z.independent = NULL,
 #' by default, it is set to be 199
 #' @param msar.model0 Estimated model for null hypothesis
 #' @param msar.model1 Estimated model for alternative hypothesis
+#' @param qu.zhuo.constraint Determines whether transition probability matrices
+#' satisfy constraints imposed in Qu and Zhuo (2017), i.e., the sum of diagonal
+#' members are greater than or eqaul to 1 + epsilon for small epsilon (0.001 by default.)
+#' when nloptr or is.MSM option is turned on, this constraint will not be imposed.
 #' @return A list of class \code{msar.model} with items:
 #' \item{LRT.statistic}{An LRT statistic computed from the null M = M0 and
 #' alternative M = (M+1)}
@@ -151,7 +155,8 @@ TestMSAR <- function(y, z.dependent = NULL, z.independent = NULL,
                       sigma.min = 0.02,
                       nloptr = FALSE,
                       bootstrap.count = 199,
-                      msar.model0 = NULL, msar.model1 = NULL)
+                      msar.model0 = NULL, msar.model1 = NULL,
+                     qu.zhuo.constraint = FALSE)
 {
   crit.method <- match.arg(crit.method)
 
@@ -167,7 +172,7 @@ TestMSAR <- function(y, z.dependent = NULL, z.independent = NULL,
                                 short.n = short.n,
                                 transition.probs.min = transition.probs.min,
                                 sigma.min = sigma.min,
-                                nloptr = nloptr)
+                                nloptr = nloptr, qu.zhuo.constraint = qu.zhuo.constraint)
   if (is.null(msar.model1))
     msar.model1 <- EstimateMSAR(y = y,
                                 z.dependent = z.dependent,
@@ -180,7 +185,7 @@ TestMSAR <- function(y, z.dependent = NULL, z.independent = NULL,
                                 short.n = short.n,
                                 transition.probs.min = transition.probs.min,
                                 sigma.min = sigma.min,
-                                nloptr = nloptr)
+                                nloptr = nloptr, qu.zhuo.constraint = qu.zhuo.constraint)
 
   LRT.statistic <- 2*(msar.model1$log.likelihood - msar.model0$log.likelihood)
 
@@ -198,7 +203,7 @@ TestMSAR <- function(y, z.dependent = NULL, z.independent = NULL,
                                     short.n = short.n,
                                     transition.probs.min = transition.probs.min,
                                     sigma.min = sigma.min,
-                                    nloptr = nloptr)
+                                    nloptr = nloptr, qu.zhuo.constraint = qu.zhuo.constraint)
   }
 
   else {
@@ -231,7 +236,7 @@ TestMSARCritBoot <- function (LRT.statistic0,
                               short.n = 5,
                               transition.probs.min = 0.01,
                               sigma.min = 0.02,
-                              nloptr = FALSE)
+                              nloptr = FALSE, qu.zhuo.constraint = FALSE)
 {
   theta0 <- msar.model0$theta
   M <- nrow(theta0$transition.probs)
@@ -260,7 +265,7 @@ TestMSARCritBoot <- function (LRT.statistic0,
                   short.n = short.n,
                   transition.probs.min = transition.probs.min,
                   sigma.min = sigma.min,
-                  nloptr = nloptr)
+                  nloptr = nloptr, qu.zhuo.constraint = qu.zhuo.constraint)
         return (list(LRT.statistic = test.result$LRT.statistic,
                      bootstrap.estimate.null = 
                        ThetaToReducedColumn((test.result$msar.model0)$theta)))
@@ -281,7 +286,7 @@ TestMSARCritBoot <- function (LRT.statistic0,
                               short.n = short.n,
                               transition.probs.min = transition.probs.min,
                               sigma.min = sigma.min,
-                              nloptr = nloptr)
+                              nloptr = nloptr, qu.zhuo.constraint = qu.zhuo.constraint)
       return (list(LRT.statistic = test.result$LRT.statistic,
                    bootstrap.estimate.null = 
                      ThetaToReducedColumn((test.result$msar.model0)$theta)))  

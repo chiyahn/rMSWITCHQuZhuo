@@ -25,6 +25,11 @@
 #' If NULL is taken, default settings are used.
 #' @param estimate.fisher Determines whether the variance of each estimate is going
 #' to be computed.
+#' @param estimate.model Determines whether a model is estimated or not.
+#' @param qu.zhuo.constraint Determines whether transition probability matrices
+#' satisfy constraints imposed in Qu and Zhuo (2017), i.e., the sum of diagonal
+#' members are greater than or eqaul to 1 + epsilon for small epsilon (0.001 by default.)
+#' when nloptr or is.MSM option is turned on, this constraint will not be imposed.
 #' @return  A list with items:
 #' \item{beta}{s by 1 column for state-independent coefficients on AR(s)}
 #' \item{mu}{M by 1 column that contains state-dependent mu}
@@ -60,11 +65,13 @@ EstimateMSAR <- function(y = y, z.dependent = NULL, z.independent = NULL,
                         sigma.min = 0.02,
                         nloptr = NULL,
                         estimate.fisher = TRUE,
-                        estimate.model = TRUE) {
+                        estimate.model = TRUE,
+                        qu.zhuo.constraint = FALSE) {
   if (M < 2) # if M = 1, non-switching assumption can be applied
   {
     is.beta.switching <- FALSE
     is.sigma.switching <- FALSE
+    qu.zhuo.constraint <- FALSE # constraint p >= 1 + epsilon cannot be achieved
   }
   if (s < 1)
     is.MSM <- FALSE
@@ -176,7 +183,7 @@ EstimateMSAR <- function(y = y, z.dependent = NULL, z.independent = NULL,
                           sigma.min = sigma.min,
                           z.dependent.lagged = z.dependent.lagged,
                           z.independent.lagged = z.independent.lagged,
-                          is.MSM = is.MSM)
+                          is.MSM = is.MSM, qu.zhuo.constraint = qu.zhuo.constraint)
 
     short.likelihoods <- sapply(short.results, "[[", "likelihood")
     short.valids <- sapply(short.likelihoods, is.finite) # check which candidates are valid
@@ -227,11 +234,37 @@ EstimateMSAR <- function(y = y, z.dependent = NULL, z.independent = NULL,
                                       sigma.min = sigma.min,
                                       z.dependent.lagged = z.dependent.lagged,
                                       z.independent.lagged = z.independent.lagged,
-                                      is.MSM = is.MSM)
+                                      is.MSM = is.MSM, qu.zhuo.constraint = qu.zhuo.constraint)
     if (!long.result$succeeded)
     {
       print("Estimation failed. Try different settings for EM-algorithm; the estimate is invalid.")
       estimate.fisher <- FALSE
+    }
+    if (qu.zhuo.constraint)
+    {
+      # Compare with unconstrained estimation. 
+      # If the likelihood of unconstrained estimation is lower, this implies that 
+      # the original estimate did not properly maximize the likelihood. Proceed with
+      # unconstrained model then.
+      model.unconstrained <- EstimateMSAR (y = y, 
+                                           z.dependent = z.dependent, 
+                                           z.independent = z.independent,
+                                            M = M, s = s,
+                                            is.beta.switching = is.beta.switching,
+                                            is.sigma.switching = is.sigma.switching,
+                                            initial.theta = long.result$theta,
+                                            epsilon = epsilon, maxit = maxit,
+                                            short.n = short.n, short.epsilon = short.epsilon,
+                                            short.iterations = short.iterations,
+                                            transition.probs.min = transition.probs.min,
+                                            sigma.min = sigma.min,
+                                            nloptr = NULL,
+                                            estimate.fisher = estimate.fisher,
+                                            estimate.model = estimate.model,
+                                            qu.zhuo.constraint = FALSE)
+      if (long.result$log.likelihood > model.unconstrained$log.likelihood)
+        long.result <- list(log.likelihood = model.unconstrained$log.likelihood,
+                            theta = model.unconstrained$theta)
     }
   }
   else
